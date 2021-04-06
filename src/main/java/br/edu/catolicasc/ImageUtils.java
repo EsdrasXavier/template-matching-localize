@@ -8,7 +8,9 @@ import javax.imageio.ImageIO;
 
 import org.apache.commons.io.FilenameUtils;
 
-import java.awt.image.BufferedImage;
+import java.awt.*;
+import java.awt.image.*;
+import javax.swing.*;
 
 public class ImageUtils {
 
@@ -66,7 +68,9 @@ public class ImageUtils {
     }
 
     public static void templateMatching(File templateImg, File searchImg) {
-        double minSAD = Integer.MAX_VALUE;
+        double minSAD = Double.MAX_VALUE;
+        int finalX = 0;
+        int finalY = 0;
         try {
             BufferedImage templateBuffer = ImageIO.read(templateImg);
             BufferedImage searchBuffer = ImageIO.read(searchImg);
@@ -80,30 +84,45 @@ public class ImageUtils {
             System.out.println("Rows: " + Math.abs(searchHeight - templateHeight) + " - Cols: "
                     + Math.abs(searchWidth - templateWidth));
 
-            for (int x = 0; x <= Math.abs(searchHeight - templateHeight); ++x) {
+            for (int x = 0; x < templateWidth - searchWidth; x += 5) {
                 System.out.println("Current row: " + x);
-                for (int y = 0; y <= Math.abs(searchWidth - templateWidth); ++y) {
+                for (int y = 0; y < templateHeight - searchHeight; y += 5) {
                     double sad = 0.0;
 
-                    for (int j = 0; j < templateHeight; j++)
-                        for (int i = 0; i < templateWidth; i++) {
-                            if (x + j < searchWidth && y + i < searchHeight) {
-                                int pixelSearch = searchBuffer.getRGB(x + j, y + i);
-                                int pixelTemplate = templateBuffer.getRGB(i, j);
+                    for (int searchX = 0; searchX < searchWidth; searchX += 5) {
+                        for (int searchY = 0; searchY < searchHeight; searchY += 5) {
+                            int pixelSearch = searchBuffer.getRGB(searchX, searchY);
+                            int pixelTemplate = templateBuffer.getRGB(x + searchX, y + searchY);
 
-                                sad += Math.abs(pixelSearch - pixelTemplate);
-                            }
+                            sad += Math.abs(pixelSearch - pixelTemplate);
                         }
-
+                    }
                     if (minSAD > sad) {
                         minSAD = sad;
-                        System.out.println("Best Row: " + y);
-                        System.out.println("Best Col: " + x);
+                        finalX = x;
+                        finalY = y;
+                        System.out.println("Best Row: " + x);
+                        System.out.println("Best Col: " + y);
                         System.out.println("Best SAD: " + sad);
                     }
                 }
-
             }
+
+            System.out.println("Done.");
+            Graphics2D g2d = templateBuffer.createGraphics();
+            g2d.setColor(Color.GREEN);
+            BasicStroke bs = new BasicStroke(2);
+            g2d.setStroke(bs);
+
+            g2d.drawLine(finalX, finalY, finalX + searchWidth, finalY);
+            g2d.drawLine(finalX, finalY + searchHeight, finalX + searchWidth, finalY + searchHeight);
+
+            g2d.drawLine(finalX, finalY, finalX, finalY + searchHeight);
+            g2d.drawLine(finalX + searchWidth, finalY, finalX + searchWidth, finalY + searchHeight);
+
+            ImageIcon ii = new ImageIcon(templateBuffer);
+            JOptionPane.showMessageDialog(null, ii);
+
         } catch (IOException e) {
             e.printStackTrace();
         }
