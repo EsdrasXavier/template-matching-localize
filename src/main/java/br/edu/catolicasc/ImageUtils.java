@@ -48,7 +48,13 @@ public class ImageUtils {
 
             final String fileName = FilenameUtils.removeExtension(imageName);
             final String fileExtension = FilenameUtils.getExtension(imageName);
-            String name = "./".concat(fileName.concat("_grayscale.").concat(fileExtension));
+
+            File directory = new File("./grayscale");
+            if (!directory.exists()) {
+                directory.mkdir();
+            }
+
+            String name = "./grayscale/".concat(fileName.concat("_grayscale.").concat(fileExtension));
             result = new File(name);
             ImageIO.write(image, "png", result);
         } catch (IOException e) {
