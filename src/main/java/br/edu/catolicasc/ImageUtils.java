@@ -67,10 +67,13 @@ public class ImageUtils {
         return result;
     }
 
-    public static void templateMatching(File templateImg, File searchImg) {
-        double minSAD = Double.MAX_VALUE;
-        int finalX = 0;
-        int finalY = 0;
+    public static Point templateMatching(File templateImg, File searchImg) {
+        return templateMatching(templateImg, searchImg, 5);
+    }
+
+    public static Point templateMatching(File templateImg, File searchImg, int steps) {
+        Point finalPoint = new Point();
+        finalPoint.setSad(Double.MAX_VALUE);
         try {
             BufferedImage templateBuffer = ImageIO.read(templateImg);
             BufferedImage searchBuffer = ImageIO.read(searchImg);
@@ -84,23 +87,23 @@ public class ImageUtils {
             System.out.println("Rows: " + Math.abs(searchHeight - templateHeight) + " - Cols: "
                     + Math.abs(searchWidth - templateWidth));
 
-            for (int x = 0; x < templateWidth - searchWidth; x += 5) {
+            for (int x = 0; x < templateWidth - searchWidth; x += steps) {
                 System.out.println("Current row: " + x);
-                for (int y = 0; y < templateHeight - searchHeight; y += 5) {
+                for (int y = 0; y < templateHeight - searchHeight; y += steps) {
                     double sad = 0.0;
 
-                    for (int searchX = 0; searchX < searchWidth; searchX += 5) {
-                        for (int searchY = 0; searchY < searchHeight; searchY += 5) {
+                    for (int searchX = 0; searchX < searchWidth; searchX += steps) {
+                        for (int searchY = 0; searchY < searchHeight; searchY += steps) {
                             int pixelSearch = searchBuffer.getRGB(searchX, searchY);
                             int pixelTemplate = templateBuffer.getRGB(x + searchX, y + searchY);
 
                             sad += Math.abs(pixelSearch - pixelTemplate);
                         }
                     }
-                    if (minSAD > sad) {
-                        minSAD = sad;
-                        finalX = x;
-                        finalY = y;
+                    if (finalPoint.getSad() > sad) {
+                        finalPoint.setSad(sad);
+                        finalPoint.setX(x);
+                        finalPoint.setY(y);
                         System.out.println("Best Row: " + x);
                         System.out.println("Best Col: " + y);
                         System.out.println("Best SAD: " + sad);
@@ -108,23 +111,50 @@ public class ImageUtils {
                 }
             }
 
-            System.out.println("Done.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("Done.");
+        return finalPoint;
+    }
+
+    public static void drawLine(File templateImg, Point initialPoint, Point finalPoint) {
+        finalPoint.setSad(Double.MAX_VALUE);
+        try {
+            BufferedImage templateBuffer = ImageIO.read(templateImg);
             Graphics2D g2d = templateBuffer.createGraphics();
             g2d.setColor(Color.GREEN);
             BasicStroke bs = new BasicStroke(2);
             g2d.setStroke(bs);
 
-            g2d.drawLine(finalX, finalY, finalX + searchWidth, finalY);
-            g2d.drawLine(finalX, finalY + searchHeight, finalX + searchWidth, finalY + searchHeight);
+            g2d.drawLine(initialPoint.getX(), initialPoint.getY(), initialPoint.getX() + finalPoint.getX(),
+                    initialPoint.getY());
+            g2d.drawLine(initialPoint.getX(), initialPoint.getY() + finalPoint.getY(),
+                    initialPoint.getX() + finalPoint.getX(), initialPoint.getY() + finalPoint.getY());
 
-            g2d.drawLine(finalX, finalY, finalX, finalY + searchHeight);
-            g2d.drawLine(finalX + searchWidth, finalY, finalX + searchWidth, finalY + searchHeight);
+            g2d.drawLine(initialPoint.getX(), initialPoint.getY(), initialPoint.getX(),
+                    initialPoint.getY() + finalPoint.getY());
+            g2d.drawLine(initialPoint.getX() + finalPoint.getX(), initialPoint.getY(),
+                    initialPoint.getX() + finalPoint.getX(), initialPoint.getY() + finalPoint.getY());
 
             ImageIcon ii = new ImageIcon(templateBuffer);
             JOptionPane.showMessageDialog(null, ii);
-
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static Point getSize(File img) {
+        Point finalPoint = new Point();
+        try {
+            BufferedImage templateBuffer = ImageIO.read(img);
+            finalPoint.setX(templateBuffer.getWidth());
+            finalPoint.setY(templateBuffer.getHeight());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return finalPoint;
     }
 }
